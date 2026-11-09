@@ -1,3 +1,5 @@
+import { mountBinarySearch } from "./binary-search-view.ts";
+
 export function mountApp(root: HTMLElement): void {
   root.replaceChildren();
 
@@ -16,9 +18,7 @@ export function mountApp(root: HTMLElement): void {
   stage.className = "stage";
   stage.id = "stage";
   stage.setAttribute("aria-label", "Visualization");
-  stage.innerHTML = `
-    <p class="empty">No algorithm is loaded yet.</p>
-  `;
 
   root.append(header, stage);
+  mountBinarySearch(stage);
 }

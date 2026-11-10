@@ -1,8 +1,15 @@
 import { binarySearchSteps, type BinarySearchStep } from "./algorithms/binary-search.ts";
 import { parseFiniteNumber, parseNumberList } from "./parse-numbers.ts";
+import { createPlayback } from "./playback.ts";
 
 const DEFAULT_ARRAY = "2, 5, 8, 12, 16, 23, 38, 56, 72, 91";
 const DEFAULT_TARGET = "23";
+const PLAYBACK_SPEEDS = [
+  { value: 0.5, label: "0.5×" },
+  { value: 1, label: "1×" },
+  { value: 2, label: "2×" },
+  { value: 4, label: "4×" },
+] as const;
 
 export function mountBinarySearch(stage: HTMLElement): void {
   stage.replaceChildren();
@@ -42,12 +49,28 @@ export function mountBinarySearch(stage: HTMLElement): void {
   const previous = document.createElement("button");
   previous.type = "button";
   previous.textContent = "Previous";
+  const play = document.createElement("button");
+  play.type = "button";
+  play.textContent = "Play";
   const next = document.createElement("button");
   next.type = "button";
   next.textContent = "Next";
+  const speedLabel = document.createElement("label");
+  speedLabel.className = "speed";
+  speedLabel.textContent = "Speed";
+  const speedSelect = document.createElement("select");
+  speedSelect.name = "speed";
+  for (const option of PLAYBACK_SPEEDS) {
+    const item = document.createElement("option");
+    item.value = String(option.value);
+    item.textContent = option.label;
+    item.selected = option.value === 1;
+    speedSelect.append(item);
+  }
+  speedLabel.append(speedSelect);
   const progress = document.createElement("p");
   progress.className = "progress";
-  toolbar.append(previous, next, progress);
+  toolbar.append(previous, play, next, speedLabel, progress);
 
   const cells = document.createElement("div");
   cells.className = "cells";
@@ -69,31 +92,37 @@ export function mountBinarySearch(stage: HTMLElement): void {
   stage.append(heading, intro, form, error, toolbar, cells, legend, message);
 
   let steps: BinarySearchStep[] = [];
-  let index = 0;
+  const playback = createPlayback();
 
   const showError = (text: string): void => {
     steps = [];
-    index = 0;
+    playback.pause();
+    playback.setLength(0);
     error.hidden = false;
     error.textContent = text;
-    cells.replaceChildren();
-    message.textContent = "";
-    progress.textContent = "No steps";
-    previous.disabled = true;
-    next.disabled = true;
+    render();
   };
 
   const render = (): void => {
-    const step = steps[index];
-    if (!step) {
-      showError("Nothing to show.");
+    const atEnd = playback.length === 0 || playback.index >= playback.length - 1;
+    previous.disabled = playback.length === 0 || playback.index === 0;
+    next.disabled = atEnd;
+    play.disabled = !playback.playing && atEnd;
+    play.textContent = playback.playing ? "Pause" : "Play";
+    play.setAttribute("aria-pressed", playback.playing ? "true" : "false");
+    speedSelect.disabled = playback.length === 0;
+
+    const step = steps[playback.index];
+    if (!step || playback.length === 0) {
+      progress.textContent = "No steps";
+      cells.replaceChildren();
+      message.textContent = "";
       return;
     }
+
     error.hidden = true;
     error.textContent = "";
-    progress.textContent = `Step ${index + 1} of ${steps.length}`;
-    previous.disabled = index === 0;
-    next.disabled = index === steps.length - 1;
+    progress.textContent = `Step ${playback.index + 1} of ${playback.length}`;
     message.textContent = step.message;
     cells.replaceChildren(
       ...step.values.map((value, cellIndex) => renderCell(step, value, cellIndex)),
@@ -110,13 +139,18 @@ export function mountBinarySearch(stage: HTMLElement): void {
       showError(cause instanceof Error ? cause.message : "Could not read the input.");
       return;
     }
+    let nextSteps: BinarySearchStep[];
     try {
-      steps = binarySearchSteps(values, target);
+      nextSteps = binarySearchSteps(values, target);
     } catch (cause) {
       showError(cause instanceof Error ? cause.message : "Binary search failed.");
       return;
     }
-    index = 0;
+    playback.pause();
+    steps = nextSteps;
+    playback.setLength(nextSteps.length);
+    playback.reset();
+    // Length and index can both be unchanged, so render even when playback stays quiet.
     render();
   };
 
@@ -125,23 +159,27 @@ export function mountBinarySearch(stage: HTMLElement): void {
     run();
   });
   previous.addEventListener("click", () => {
-    if (index === 0) return;
-    index -= 1;
-    render();
+    playback.previous();
+  });
+  play.addEventListener("click", () => {
+    if (playback.playing) playback.pause();
+    else playback.play();
   });
   next.addEventListener("click", () => {
-    if (index >= steps.length - 1) return;
-    index += 1;
-    render();
+    playback.next();
   });
+  speedSelect.addEventListener("change", () => {
+    playback.setSpeed(Number(speedSelect.value));
+  });
+  playback.subscribe(render);
   window.addEventListener("keydown", (event) => {
     if (isTypingTarget(event.target)) return;
     if (event.key === "ArrowLeft") {
       event.preventDefault();
-      previous.click();
+      playback.previous();
     } else if (event.key === "ArrowRight") {
       event.preventDefault();
-      next.click();
+      playback.next();
     }
   });
 
@@ -191,5 +229,9 @@ function renderCell(step: BinarySearchStep, value: number, cellIndex: number): H
 }
 
 function isTypingTarget(target: EventTarget | null): boolean {
-  return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
+  return (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement
+  );
 }

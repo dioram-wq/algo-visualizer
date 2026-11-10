@@ -145,9 +145,32 @@ h2 {
   cursor: pointer;
 }
 
-.toolbar button:disabled {
+.toolbar button:disabled,
+.toolbar select:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.toolbar select {
+  font: 16px/1.2 var(--mono);
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
 }
 
 .error {

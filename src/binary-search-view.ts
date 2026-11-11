@@ -11,7 +11,8 @@ const PLAYBACK_SPEEDS = [
   { value: 4, label: "4×" },
 ] as const;
 
-export function mountBinarySearch(stage: HTMLElement): void {
+/** Mount the binary search player. The returned function stops its timer and key handling. */
+export function mountBinarySearch(stage: HTMLElement): () => void {
   stage.replaceChildren();
 
   const heading = document.createElement("h2");
@@ -171,8 +172,8 @@ export function mountBinarySearch(stage: HTMLElement): void {
   speedSelect.addEventListener("change", () => {
     playback.setSpeed(Number(speedSelect.value));
   });
-  playback.subscribe(render);
-  window.addEventListener("keydown", (event) => {
+  const unsubscribe = playback.subscribe(render);
+  const onKeyDown = (event: KeyboardEvent): void => {
     if (isTypingTarget(event.target)) return;
     if (event.key === "ArrowLeft") {
       event.preventDefault();
@@ -181,9 +182,16 @@ export function mountBinarySearch(stage: HTMLElement): void {
       event.preventDefault();
       playback.next();
     }
-  });
+  };
+  window.addEventListener("keydown", onKeyDown);
 
   run();
+
+  return () => {
+    window.removeEventListener("keydown", onKeyDown);
+    unsubscribe();
+    playback.dispose();
+  };
 }
 
 function field(labelText: string, name: string, value: string, type: string): HTMLLabelElement {

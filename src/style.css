@@ -351,6 +351,15 @@ h2 {
   color: var(--dim);
 }
 
+.bar.out-of-range {
+  opacity: 0.38;
+}
+
+.bar.in-range .column {
+  background: color-mix(in srgb, var(--accent) 35%, var(--bar));
+  border-color: var(--accent);
+}
+
 .bar.in-prefix .column {
   background: var(--accent);
   border-color: var(--accent);
@@ -362,6 +371,11 @@ h2 {
 }
 
 .bar.is-swap .column {
+  background: var(--move);
+  border-color: var(--move);
+}
+
+.bar.is-write .column {
   background: var(--move);
   border-color: var(--move);
 }
@@ -383,6 +397,16 @@ h2 {
 .swatch.is-swap {
   background: var(--move);
   border-color: var(--move);
+}
+
+.swatch.is-write {
+  background: var(--move);
+  border-color: var(--move);
+}
+
+.swatch.is-range {
+  background: color-mix(in srgb, var(--accent) 35%, var(--bar));
+  border-color: var(--accent);
 }
 
 .message {

@@ -12,6 +12,7 @@
   --dim: #8a8378;
   --danger: #9c341f;
   --move: #2c4f73;
+  --pivot: #6d4ea3;
   --bar: #cfc6b8;
   --font: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
   --mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
@@ -36,6 +37,7 @@
     --dim: #8d867a;
     --danger: #f0a598;
     --move: #9ec0e8;
+    --pivot: #cbb6f0;
     --bar: #4a433a;
   }
 }
@@ -365,6 +367,11 @@ h2 {
   border-color: var(--accent);
 }
 
+.bar.is-pivot .column {
+  background: var(--pivot);
+  border-color: var(--pivot);
+}
+
 .bar.is-compare .column {
   background: var(--mid);
   border-color: var(--mid);
@@ -387,6 +394,11 @@ h2 {
 .swatch.in-prefix {
   background: var(--accent);
   border-color: var(--accent);
+}
+
+.swatch.is-pivot {
+  background: var(--pivot);
+  border-color: var(--pivot);
 }
 
 .swatch.is-compare {

@@ -1,13 +1,15 @@
 import { mountBinarySearch } from "./binary-search-view.ts";
 import { mountInsertionSort } from "./insertion-sort-view.ts";
 import { mountMergeSort } from "./merge-sort-view.ts";
+import { mountQuickSort } from "./quicksort-view.ts";
 
-type AlgorithmId = "binary-search" | "insertion-sort" | "merge-sort";
+type AlgorithmId = "binary-search" | "insertion-sort" | "merge-sort" | "quicksort";
 
 const ALGORITHMS: readonly { id: AlgorithmId; label: string }[] = [
   { id: "binary-search", label: "Binary search" },
   { id: "insertion-sort", label: "Insertion sort" },
   { id: "merge-sort", label: "Merge sort" },
+  { id: "quicksort", label: "Quicksort" },
 ];
 
 export function mountApp(root: HTMLElement): void {
@@ -71,6 +73,8 @@ function mountAlgorithm(stage: HTMLElement, id: AlgorithmId): () => void {
       return mountInsertionSort(stage);
     case "merge-sort":
       return mountMergeSort(stage);
+    case "quicksort":
+      return mountQuickSort(stage);
     default: {
       const unexpected: never = id;
       throw new Error(`Unexpected algorithm: ${String(unexpected)}`);

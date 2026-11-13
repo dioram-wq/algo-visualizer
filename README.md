@@ -17,7 +17,8 @@ npm run build
 - Binary search step generator (`src/algorithms/binary-search.ts`)
 - Insertion sort step generator (`src/algorithms/insertion-sort.ts`)
 - Merge sort step generator (`src/algorithms/merge-sort.ts`)
-- A player that switches between binary search, insertion sort, and merge sort, using shared playback controls (`src/playback.ts`): play, pause, speed, previous, and next. The left and right arrow keys step too.
+- Quicksort step generator (`src/algorithms/quicksort.ts`)
+- A player that switches between binary search, insertion sort, merge sort, and quicksort, using shared playback controls (`src/playback.ts`): play, pause, speed, previous, and next. The left and right arrow keys step too.
 
 The binary search generator assumes a non-decreasing array of finite numbers. It records the opening window, every midpoint probe, and either the matching index or an empty window.
 
@@ -25,14 +26,16 @@ The insertion sort generator takes any array of finite numbers and does not muta
 
 The merge sort generator takes any array of finite numbers and does not mutate it. It records the starting array, every split of a subarray, every comparison while two sorted halves are merged, and every write back into the array, and it ends on the sorted array.
 
+The quicksort generator takes any array of finite numbers and does not mutate it. It uses Lomuto partition, with the last element of the active range as the pivot. It records the starting array, the active subarray range, each pivot choice, every comparison, every swap, and the pivot's final position, and it ends on the sorted array.
+
 ## How it's built
 
 This project is built with AI pair programming (Cursor agents) under Diogo's direction. Changes land in small increments.
 
 ## Roadmap
 
-1. Shared playback controls: play, pause, and speed, reused by every algorithm. **Done.** The controller is `src/playback.ts`. Binary search, insertion sort, and merge sort use it, and later algorithms should too.
-2. Sorting: insertion sort, merge sort, and quicksort. **Insertion sort and merge sort are done.** The generators are `src/algorithms/insertion-sort.ts` and `src/algorithms/merge-sort.ts`, and the page plays them with the shared controls. Quicksort is still ahead.
+1. Shared playback controls: play, pause, and speed, reused by every algorithm. **Done.** The controller is `src/playback.ts`. Binary search, insertion sort, merge sort, and quicksort use it, and later algorithms should too.
+2. Sorting: insertion sort, merge sort, and quicksort. **Done.** The generators are `src/algorithms/insertion-sort.ts`, `src/algorithms/merge-sort.ts`, and `src/algorithms/quicksort.ts`, and the page plays them with the shared controls.
 3. Linear structures: stack, queue, and linked list
 4. Trees: binary search tree insert and search, then heap operations
 5. Graphs: BFS and DFS on a small grid

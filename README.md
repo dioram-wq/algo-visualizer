@@ -21,6 +21,7 @@ npm run build
 - Stack step generator (`src/algorithms/stack.ts`)
 - Queue step generator (`src/algorithms/queue.ts`)
 - Linked list step generator (`src/algorithms/linked-list.ts`)
+- Binary search tree step generator (`src/algorithms/bst.ts`). The page does not play it yet.
 - A player that switches between binary search, insertion sort, merge sort, quicksort, stack, queue, and linked list, using shared playback controls (`src/playback.ts`): play, pause, speed, previous, and next. The left and right arrow keys step too.
 
 The binary search generator assumes a non-decreasing array of finite numbers. It records the opening window, every midpoint probe, and either the matching index or an empty window.
@@ -37,6 +38,8 @@ The queue generator takes a list of enqueue, dequeue, and peek operations and an
 
 The linked list generator takes a list of insert-head, insert-tail, search, and delete operations and an optional starting list, and does not mutate either. It records the starting list, each operation, the inserted, found, or deleted value and its index, a miss when search or delete does not find the value, and the list contents (head to tail) after each operation. Search and delete use the first match.
 
+The binary search tree generator takes a list of insert and search operations and does not mutate it. It records the empty tree, every comparison, every move to an existing left or right child, each inserted node, a duplicate when an insert meets a value already in the tree, and found or not-found for a search. Duplicates are not inserted: an equal value stops the walk and the tree stays as it was, so the shape depends on the first time each value is inserted.
+
 ## How it's built
 
 This project is built with AI pair programming (Cursor agents) under Diogo's direction. Changes land in small increments.
@@ -46,7 +49,7 @@ This project is built with AI pair programming (Cursor agents) under Diogo's dir
 1. Shared playback controls: play, pause, and speed, reused by every algorithm. **Done.** The controller is `src/playback.ts`. Binary search, insertion sort, merge sort, quicksort, stack, queue, and linked list use it, and later algorithms should too.
 2. Sorting: insertion sort, merge sort, and quicksort. **Done.** The generators are `src/algorithms/insertion-sort.ts`, `src/algorithms/merge-sort.ts`, and `src/algorithms/quicksort.ts`, and the page plays them with the shared controls.
 3. Linear structures: stack, queue, and linked list. **Done.** The generators are `src/algorithms/stack.ts`, `src/algorithms/queue.ts`, and `src/algorithms/linked-list.ts`, and the page plays them with the shared controls.
-4. Trees: binary search tree insert and search, then heap operations. **Next** is BST insert and search.
+4. Trees: binary search tree insert and search, then heap operations. The BST insert and search generator is **done** (`src/algorithms/bst.ts`). **Next** is a view that plays those steps with the shared controls. Heap operations come after that.
 5. Graphs: BFS and DFS on a small grid
 6. A code panel that highlights the line for the current step
 7. Course checks that ask you to predict the next step

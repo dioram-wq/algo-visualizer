@@ -839,6 +839,179 @@ h2 {
   border-color: var(--danger);
 }
 
+.heap-scene {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.heap-canvas {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.heap-canvas.is-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  min-height: 72px;
+}
+
+.heap-canvas.is-underflow {
+  border-radius: 12px;
+  outline: 1px solid var(--danger);
+}
+
+.heap-edges {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.heap-edge {
+  stroke: var(--dim);
+  stroke-width: 2;
+}
+
+.heap-edge.is-marked {
+  stroke: var(--move);
+  stroke-width: 3;
+}
+
+.heap-node {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.heap-node.is-compare,
+.cell.is-compare {
+  background: var(--mid);
+  border-color: var(--mid);
+  color: #1c1915;
+}
+
+.cell.is-compare .index {
+  color: #1c1915;
+}
+
+.heap-node.is-swap,
+.cell.is-swap {
+  background: var(--move);
+  border-color: var(--move);
+  color: var(--accent-ink);
+}
+
+.cell.is-swap .index {
+  color: var(--accent-ink);
+}
+
+.heap-node.is-insert,
+.cell.is-insert {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.cell.is-insert .index {
+  color: var(--accent-ink);
+}
+
+.heap-node.is-extract,
+.cell.is-extract {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--accent-ink);
+}
+
+.cell.is-extract .index {
+  color: var(--accent-ink);
+}
+
+.heap-node.is-relocate,
+.cell.is-relocate {
+  border-color: var(--pivot);
+  box-shadow: inset 0 0 0 2px var(--pivot);
+}
+
+.heap-node.is-peek,
+.cell.is-peek {
+  background: var(--found);
+  border-color: var(--found);
+  color: #f4f1ea;
+}
+
+.cell.is-peek .index {
+  color: #f4f1ea;
+}
+
+.heap-empty {
+  margin: 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.heap-canvas.is-underflow .heap-empty,
+.heap-array.is-underflow .heap-empty,
+.heap-result.is-underflow {
+  color: var(--danger);
+}
+
+.heap-result {
+  margin: 4px 0 0;
+  min-height: 1.5em;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 14px;
+}
+
+.heap-array {
+  margin-top: 18px;
+}
+
+.heap-caption {
+  margin: 0 0 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.heap-array .cells {
+  margin-top: 0;
+}
+
+.swatch.is-extract {
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+.swatch.is-relocate {
+  background: var(--pivot);
+  border-color: var(--pivot);
+}
+
+.swatch.is-peek {
+  background: var(--found);
+  border-color: var(--found);
+}
+
 .message {
   margin: 16px 0 0;
   min-height: 1.5em;

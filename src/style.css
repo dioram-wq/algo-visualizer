@@ -1012,6 +1012,127 @@ h2 {
   border-color: var(--found);
 }
 
+.grid-scene {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.controls textarea {
+  font: 16px/1.4 var(--mono);
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  width: 100%;
+  min-height: 6.5rem;
+  resize: vertical;
+}
+
+.grid-board {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.grid-board.is-blocked {
+  border-radius: 12px;
+  outline: 1px solid var(--danger);
+  outline-offset: 8px;
+}
+
+.grid-row {
+  display: flex;
+}
+
+.grid-cell {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.grid-cell.is-wall {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.grid-cell.is-frontier {
+  background: var(--mid);
+  border-color: var(--mid);
+  color: #1c1915;
+}
+
+.grid-cell.is-visited {
+  background: var(--move);
+  border-color: var(--move);
+  color: var(--accent-ink);
+}
+
+.grid-cell.is-current {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.grid-cell.is-path {
+  background: var(--found);
+  border-color: var(--found);
+  color: #f4f1ea;
+}
+
+.grid-result {
+  margin: 4px 0 0;
+  min-height: 1.5em;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 14px;
+}
+
+.grid-result.is-blocked {
+  color: var(--danger);
+}
+
+.swatch.is-wall {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.swatch.is-frontier {
+  background: var(--mid);
+  border-color: var(--mid);
+}
+
+.swatch.is-visited {
+  background: var(--move);
+  border-color: var(--move);
+}
+
+.swatch.is-current {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.swatch.is-path {
+  background: var(--found);
+  border-color: var(--found);
+}
+
 .message {
   margin: 16px 0 0;
   min-height: 1.5em;

@@ -23,8 +23,8 @@ npm run build
 - Linked list step generator (`src/algorithms/linked-list.ts`)
 - Binary search tree step generator (`src/algorithms/bst.ts`)
 - Binary min-heap step generator (`src/algorithms/heap.ts`)
-- Grid breadth-first search step generator (`src/algorithms/grid-bfs.ts`). The page does not play it yet.
-- A player that switches between binary search, insertion sort, merge sort, quicksort, stack, queue, linked list, binary search tree, and binary min-heap, using shared playback controls (`src/playback.ts`): play, pause, speed, previous, and next. The left and right arrow keys step too.
+- Grid breadth-first search step generator (`src/algorithms/grid-bfs.ts`) and a grid that plays it
+- A player that switches between binary search, insertion sort, merge sort, quicksort, stack, queue, linked list, binary search tree, binary min-heap, and grid breadth-first search, using shared playback controls (`src/playback.ts`): play, pause, speed, previous, and next. The left and right arrow keys step too.
 
 The binary search generator assumes a non-decreasing array of finite numbers. It records the opening window, every midpoint probe, and either the matching index or an empty window.
 
@@ -44,7 +44,7 @@ The binary search tree generator takes a list of insert and search operations an
 
 The binary min-heap generator takes a list of insert, extract-min, and peek operations and an optional starting heap, and does not mutate either. It records the starting heap, each operation, sift-up comparisons and swaps on insert, root removal, the move of the last value to the root, and sift-down comparisons and swaps on extract-min, an underflow when extract-min or peek hits an empty heap, and the heap array after each operation. The starting array must already be a min-heap, stored with the parent before its children. Equal values do not swap.
 
-The grid breadth-first search generator takes a small rectangular grid of open cells and walls, a start cell, and a goal cell, and does not mutate them. It searches four ways from each cell: up, then right, then down, then left. It records each enqueue, each visit when a cell is dequeued, the frontier from front to back, and the visited cells in the order they were dequeued. A cell joins the frontier once, and it is not enqueued again. When the goal is dequeued, it records a shortest path from the start to the goal. If the frontier empties first, it records that there is no path. The start and the goal must be open cells on the grid.
+The grid breadth-first search generator takes a small rectangular grid of open cells and walls, a start cell, and a goal cell, and does not mutate them. It searches four ways from each cell: up, then right, then down, then left. It records each enqueue, each visit when a cell is dequeued, the frontier from front to back, and the visited cells in the order they were dequeued. A cell joins the frontier once, and it is not enqueued again. When the goal is dequeued, it records a shortest path from the start to the goal. If the frontier empties first, it records that there is no path. The start and the goal must be open cells on the grid. The page plays these steps: walls stay blocked, frontier and visited cells are colored, the current cell is marked, and the shortest path is colored when the goal is found.
 
 ## How it's built
 
@@ -52,10 +52,10 @@ This project is built with AI pair programming (Cursor agents) under Diogo's dir
 
 ## Roadmap
 
-1. Shared playback controls: play, pause, and speed, reused by every algorithm. **Done.** The controller is `src/playback.ts`. Binary search, insertion sort, merge sort, quicksort, stack, queue, linked list, binary search tree, and binary min-heap use it, and later algorithms should too.
+1. Shared playback controls: play, pause, and speed, reused by every algorithm. **Done.** The controller is `src/playback.ts`. Binary search, insertion sort, merge sort, quicksort, stack, queue, linked list, binary search tree, binary min-heap, and grid breadth-first search use it, and later algorithms should too.
 2. Sorting: insertion sort, merge sort, and quicksort. **Done.** The generators are `src/algorithms/insertion-sort.ts`, `src/algorithms/merge-sort.ts`, and `src/algorithms/quicksort.ts`, and the page plays them with the shared controls.
 3. Linear structures: stack, queue, and linked list. **Done.** The generators are `src/algorithms/stack.ts`, `src/algorithms/queue.ts`, and `src/algorithms/linked-list.ts`, and the page plays them with the shared controls.
 4. Trees: binary search tree insert and search, then heap operations. **Done.** The generators are `src/algorithms/bst.ts` and `src/algorithms/heap.ts`, and the page plays both with the shared controls.
-5. Graphs: BFS and DFS on a small grid. The BFS generator is **done** (`src/algorithms/grid-bfs.ts`). **Next** is a grid view that plays those steps, then DFS.
+5. Graphs: BFS and DFS on a small grid. The BFS generator and its grid view are **done** (`src/algorithms/grid-bfs.ts`). The page plays those steps with the shared controls. **Next** is DFS.
 6. A code panel that highlights the line for the current step
 7. Course checks that ask you to predict the next step

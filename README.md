@@ -24,6 +24,7 @@ npm run build
 - Binary search tree step generator (`src/algorithms/bst.ts`)
 - Binary min-heap step generator (`src/algorithms/heap.ts`)
 - Grid breadth-first search step generator (`src/algorithms/grid-bfs.ts`) and a grid that plays it
+- Grid depth-first search step generator (`src/algorithms/grid-dfs.ts`)
 - A player that switches between binary search, insertion sort, merge sort, quicksort, stack, queue, linked list, binary search tree, binary min-heap, and grid breadth-first search, using shared playback controls (`src/playback.ts`): play, pause, speed, previous, and next. The left and right arrow keys step too.
 
 The binary search generator assumes a non-decreasing array of finite numbers. It records the opening window, every midpoint probe, and either the matching index or an empty window.
@@ -46,6 +47,8 @@ The binary min-heap generator takes a list of insert, extract-min, and peek oper
 
 The grid breadth-first search generator takes a small rectangular grid of open cells and walls, a start cell, and a goal cell, and does not mutate them. It searches four ways from each cell: up, then right, then down, then left. It records each enqueue, each visit when a cell is dequeued, the frontier from front to back, and the visited cells in the order they were dequeued. A cell joins the frontier once, and it is not enqueued again. When the goal is dequeued, it records a shortest path from the start to the goal. If the frontier empties first, it records that there is no path. The start and the goal must be open cells on the grid. The page plays these steps: walls stay blocked, frontier and visited cells are colored, the current cell is marked, and the shortest path is colored when the goal is found.
 
+The grid depth-first search generator takes the same kind of grid, start, and goal, and does not mutate them. It searches with an explicit stack, looking up, then right, then down, then left. The first open neighbor in that order is pushed last, so it is popped first. It records each push, each visit when a cell is popped, a backtrack when the popped cell is not a child of the cell just visited, the stack from bottom to top, and the visited cells in the order they were popped. A cell on the stack is the frontier and is not visited yet. A cell joins the stack once, and it is not pushed again. When the goal is popped, it records the path the search followed from the start to the goal, which can be longer than a shortest path. If the stack empties first, it records that there is no path. The start and the goal must be open cells on the grid.
+
 ## How it's built
 
 This project is built with AI pair programming (Cursor agents) under Diogo's direction. Changes land in small increments.
@@ -56,6 +59,6 @@ This project is built with AI pair programming (Cursor agents) under Diogo's dir
 2. Sorting: insertion sort, merge sort, and quicksort. **Done.** The generators are `src/algorithms/insertion-sort.ts`, `src/algorithms/merge-sort.ts`, and `src/algorithms/quicksort.ts`, and the page plays them with the shared controls.
 3. Linear structures: stack, queue, and linked list. **Done.** The generators are `src/algorithms/stack.ts`, `src/algorithms/queue.ts`, and `src/algorithms/linked-list.ts`, and the page plays them with the shared controls.
 4. Trees: binary search tree insert and search, then heap operations. **Done.** The generators are `src/algorithms/bst.ts` and `src/algorithms/heap.ts`, and the page plays both with the shared controls.
-5. Graphs: BFS and DFS on a small grid. The BFS generator and its grid view are **done** (`src/algorithms/grid-bfs.ts`). The page plays those steps with the shared controls. **Next** is DFS.
+5. Graphs: BFS and DFS on a small grid. The BFS generator and its grid view are **done** (`src/algorithms/grid-bfs.ts`). The page plays those steps with the shared controls. The DFS generator is **done** (`src/algorithms/grid-dfs.ts`). **Next** is a grid view that plays the DFS steps.
 6. A code panel that highlights the line for the current step
 7. Course checks that ask you to predict the next step

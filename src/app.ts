@@ -1,6 +1,6 @@
 import { mountBinarySearch } from "./binary-search-view.ts";
 import { mountBst } from "./bst-view.ts";
-import { mountGridBfs } from "./grid-view.ts";
+import { mountGridBfs, mountGridDfs } from "./grid-view.ts";
 import { mountHeap } from "./heap-view.ts";
 import { mountInsertionSort } from "./insertion-sort-view.ts";
 import { mountMergeSort } from "./merge-sort-view.ts";
@@ -19,7 +19,8 @@ type AlgorithmId =
   | "linked-list"
   | "bst"
   | "heap"
-  | "grid-bfs";
+  | "grid-bfs"
+  | "grid-dfs";
 
 const ALGORITHMS: readonly { id: AlgorithmId; label: string }[] = [
   { id: "binary-search", label: "Binary search" },
@@ -32,6 +33,7 @@ const ALGORITHMS: readonly { id: AlgorithmId; label: string }[] = [
   { id: "bst", label: "Binary search tree" },
   { id: "heap", label: "Binary min-heap" },
   { id: "grid-bfs", label: "Grid BFS" },
+  { id: "grid-dfs", label: "Grid DFS" },
 ];
 
 export function mountApp(root: HTMLElement): void {
@@ -109,6 +111,8 @@ function mountAlgorithm(stage: HTMLElement, id: AlgorithmId): () => void {
       return mountHeap(stage);
     case "grid-bfs":
       return mountGridBfs(stage);
+    case "grid-dfs":
+      return mountGridDfs(stage);
     default: {
       const unexpected: never = id;
       throw new Error(`Unexpected algorithm: ${String(unexpected)}`);

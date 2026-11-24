@@ -1,12 +1,17 @@
-import { gridBfsSteps, type GridBfsStep } from "./algorithms/grid-bfs.ts";
+import { gridBfsSteps, type GridBfsStep, type GridCell, type GridPoint } from "./algorithms/grid-bfs.ts";
+import { gridDfsSteps, type GridDfsStep } from "./algorithms/grid-dfs.ts";
 import {
+  gridBoardLabel,
   gridCellLabel,
+  gridDfsFrame,
   gridFrame,
+  gridLegend,
   gridResultLabel,
   GRID_CELL_GAP,
   GRID_CELL_SIZE,
   type GridCellView,
   type GridFrame,
+  type GridSearchKind,
 } from "./grid-layout.ts";
 import { parseGrid } from "./parse-grid.ts";
 import { createPlayback } from "./playback.ts";
@@ -20,16 +25,60 @@ const PLAYBACK_SPEEDS = [
   { value: 4, label: "4×" },
 ] as const;
 
+const BFS_INTRO =
+  'Breadth-first search leaves the start and spreads one cell at a time, looking up, then right, then down, then left. A wall cannot be entered. The queue is the frontier, and a cell is visited when it leaves the queue. Reaching the goal colors a shortest path. Draw each row on its own line: "." is open, "#" is a wall, "S" is the start, and "G" is the goal. Use "@" when the start and the goal are the same cell.';
+
+const DFS_INTRO =
+  'Depth-first search leaves the start and follows one branch as far as it can, looking up, then right, then down, then left. A wall cannot be entered. The stack is the frontier, and a cell is visited when it is popped. Popping a cell that is not a child of the cell just visited is a backtrack. Reaching the goal colors the path the search followed, which can be longer than a shortest path. Draw each row on its own line: "." is open, "#" is a wall, "S" is the start, and "G" is the goal. Use "@" when the start and the goal are the same cell.';
+
+interface GridCaptionStep {
+  readonly message: string;
+  readonly action: GridBfsStep["action"] | GridDfsStep["action"];
+  readonly path: readonly GridPoint[];
+}
+
+interface GridPlayer<Step extends GridCaptionStep> {
+  readonly kind: GridSearchKind;
+  readonly title: string;
+  readonly intro: string;
+  readonly run: (
+    grid: readonly (readonly GridCell[])[],
+    start: GridPoint,
+    goal: GridPoint,
+  ) => Step[];
+  readonly frame: (step: Step) => GridFrame;
+}
+
 /** Mount the grid breadth-first search player. The returned function stops its timer and key handling. */
 export function mountGridBfs(stage: HTMLElement): () => void {
+  return mountGridPlayer(stage, {
+    kind: "bfs",
+    title: "Grid breadth-first search",
+    intro: BFS_INTRO,
+    run: gridBfsSteps,
+    frame: gridFrame,
+  });
+}
+
+/** Mount the grid depth-first search player. The returned function stops its timer and key handling. */
+export function mountGridDfs(stage: HTMLElement): () => void {
+  return mountGridPlayer(stage, {
+    kind: "dfs",
+    title: "Grid depth-first search",
+    intro: DFS_INTRO,
+    run: gridDfsSteps,
+    frame: gridDfsFrame,
+  });
+}
+
+function mountGridPlayer<Step extends GridCaptionStep>(stage: HTMLElement, player: GridPlayer<Step>): () => void {
   stage.replaceChildren();
 
   const heading = document.createElement("h2");
-  heading.textContent = "Grid breadth-first search";
+  heading.textContent = player.title;
   const intro = document.createElement("p");
   intro.className = "intro";
-  intro.textContent =
-    'Breadth-first search leaves the start and spreads one cell at a time, looking up, then right, then down, then left. A wall cannot be entered. The queue is the frontier, and a cell is visited when it leaves the queue. Reaching the goal colors a shortest path. Draw each row on its own line: "." is open, "#" is a wall, "S" is the start, and "G" is the goal. Use "@" when the start and the goal are the same cell.';
+  intro.textContent = player.intro;
 
   const form = document.createElement("form");
   form.className = "controls";
@@ -85,13 +134,9 @@ export function mountGridBfs(stage: HTMLElement): () => void {
 
   const legend = document.createElement("ul");
   legend.className = "legend";
-  legend.append(
-    legendItem("is-wall", "wall"),
-    legendItem("is-frontier", "frontier"),
-    legendItem("is-visited", "visited"),
-    legendItem("is-current", "current"),
-    legendItem("is-path", "path"),
-  );
+  for (const item of gridLegend(player.kind)) {
+    legend.append(legendItem(`is-${item.shade}`, item.text));
+  }
 
   const message = document.createElement("p");
   message.className = "message";
@@ -99,7 +144,7 @@ export function mountGridBfs(stage: HTMLElement): () => void {
 
   stage.append(heading, intro, form, error, toolbar, scene, legend, message);
 
-  let steps: GridBfsStep[] = [];
+  let steps: Step[] = [];
   const playback = createPlayback();
 
   const showError = (text: string): void => {
@@ -124,7 +169,7 @@ export function mountGridBfs(stage: HTMLElement): () => void {
     if (!current || playback.length === 0) {
       progress.textContent = "No steps";
       board.classList.remove("is-blocked");
-      board.setAttribute("aria-label", "Breadth-first search grid");
+      board.setAttribute("aria-label", gridBoardLabel({ blocked: false, reached: false }, player.kind));
       board.style.width = "";
       board.replaceChildren();
       result.textContent = "";
@@ -137,21 +182,21 @@ export function mountGridBfs(stage: HTMLElement): () => void {
     error.textContent = "";
     progress.textContent = `Step ${playback.index + 1} of ${playback.length}`;
     message.textContent = current.message;
-    const frame = gridFrame(current);
+    const frame = player.frame(current);
     board.classList.toggle("is-blocked", frame.blocked);
-    board.setAttribute("aria-label", boardLabel(frame));
+    board.setAttribute("aria-label", gridBoardLabel(frame, player.kind));
     board.style.gap = `${GRID_CELL_GAP}px`;
     board.style.width = `${frame.width}px`;
-    board.replaceChildren(...renderRows(frame));
+    board.replaceChildren(...renderRows(frame, player.kind));
     result.classList.toggle("is-blocked", frame.blocked);
-    result.textContent = gridResultLabel(current);
+    result.textContent = gridResultLabel(current, player.kind);
   };
 
   const run = (): void => {
-    let nextSteps: GridBfsStep[];
+    let nextSteps: Step[];
     try {
       const parsed = parseGrid(gridInput.value);
-      nextSteps = gridBfsSteps(parsed.grid, parsed.start, parsed.goal);
+      nextSteps = player.run(parsed.grid, parsed.start, parsed.goal);
     } catch (cause) {
       showError(cause instanceof Error ? cause.message : "The grid search failed.");
       return;
@@ -226,28 +271,22 @@ function legendItem(kind: string, text: string): HTMLLIElement {
   return item;
 }
 
-function boardLabel(frame: GridFrame): string {
-  if (frame.blocked) return "Breadth-first search grid, no path";
-  if (frame.reached) return "Breadth-first search grid, shortest path";
-  return "Breadth-first search grid";
-}
-
-function renderRows(frame: GridFrame): HTMLElement[] {
+function renderRows(frame: GridFrame, kind: GridSearchKind): HTMLElement[] {
   return frame.cells.map((line) => {
     const row = document.createElement("div");
     row.className = "grid-row";
     row.setAttribute("role", "row");
     row.style.gap = `${GRID_CELL_GAP}px`;
-    row.replaceChildren(...line.map((cell) => renderCell(cell)));
+    row.replaceChildren(...line.map((cell) => renderCell(cell, kind)));
     return row;
   });
 }
 
-function renderCell(cell: GridCellView): HTMLElement {
+function renderCell(cell: GridCellView, kind: GridSearchKind): HTMLElement {
   const element = document.createElement("div");
   element.className = `grid-cell is-${cell.shade}`;
   element.setAttribute("role", "gridcell");
-  element.setAttribute("aria-label", gridCellLabel(cell));
+  element.setAttribute("aria-label", gridCellLabel(cell, kind));
   element.style.width = `${GRID_CELL_SIZE}px`;
   element.style.height = `${GRID_CELL_SIZE}px`;
   const mark = marker(cell);

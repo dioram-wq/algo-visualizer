@@ -1,11 +1,14 @@
-import type { GridBfsStep, GridCell, GridPoint } from "./algorithms/grid-bfs.ts";
+import type { GridBfsAction, GridBfsStep, GridCell, GridPoint } from "./algorithms/grid-bfs.ts";
+import type { GridDfsAction, GridDfsStep } from "./algorithms/grid-dfs.ts";
 
 /** Side of one drawn cell, in pixels. */
 export const GRID_CELL_SIZE = 44;
 /** Space between neighboring cells, in pixels. */
 export const GRID_CELL_GAP = 8;
 
-export type GridShade = "wall" | "open" | "frontier" | "visited" | "current" | "path";
+export type GridSearchKind = "bfs" | "dfs";
+
+export type GridShade = "wall" | "open" | "frontier" | "visited" | "backtrack" | "current" | "path";
 
 export interface GridCellView {
   readonly row: number;
@@ -23,6 +26,22 @@ export interface GridFrame {
   readonly blocked: boolean;
 }
 
+export interface GridLegendItem {
+  readonly shade: GridShade;
+  readonly text: string;
+}
+
+interface GridDrawStep {
+  readonly grid: readonly (readonly GridCell[])[];
+  readonly start: GridPoint;
+  readonly goal: GridPoint;
+  readonly action: GridBfsAction | GridDfsAction;
+  readonly cell: GridPoint | null;
+  readonly frontier: readonly GridPoint[];
+  readonly visited: readonly GridPoint[];
+  readonly path: readonly GridPoint[];
+}
+
 /**
  * Map one breadth-first search step onto a grid of cell colors.
  * Walls stay walls. The cell this step enqueued or dequeued is current.
@@ -31,6 +50,122 @@ export interface GridFrame {
  * The step's grid is not mutated.
  */
 export function gridFrame(step: GridBfsStep): GridFrame {
+  return drawGrid(
+    {
+      grid: step.grid,
+      start: step.start,
+      goal: step.goal,
+      action: step.action,
+      cell: step.cell,
+      frontier: step.queue,
+      visited: step.visited,
+      path: step.path,
+    },
+    "bfs",
+  );
+}
+
+/**
+ * Map one depth-first search step onto a grid of cell colors.
+ * Walls stay walls. The cell this step pushed is current.
+ * A popped cell is current, unless the pop is a backtrack, which marks the
+ * cell the search returned to. Other cells on the path the search followed
+ * are path, but only after the goal is found. Cells still on the stack are
+ * frontier, and cells already popped are visited. The step's grid is not mutated.
+ */
+export function gridDfsFrame(step: GridDfsStep): GridFrame {
+  return drawGrid(
+    {
+      grid: step.grid,
+      start: step.start,
+      goal: step.goal,
+      action: step.action,
+      cell: step.cell,
+      frontier: step.stack,
+      visited: step.visited,
+      path: step.path,
+    },
+    "dfs",
+  );
+}
+
+/** Short caption under the grid for the current step. */
+export function gridResultLabel(
+  step: {
+    readonly action: GridBfsAction | GridDfsAction;
+    readonly path: readonly GridPoint[];
+  },
+  kind: GridSearchKind = "bfs",
+): string {
+  switch (step.action) {
+    case "enqueue":
+      return "enqueued";
+    case "push":
+      return "pushed";
+    case "visit":
+      return "visited";
+    case "backtrack":
+      return "backtracked";
+    case "found":
+      return pathCaption(step.path.length, kind);
+    case "no-path":
+      return "no path";
+    default: {
+      const unexpected: never = step.action;
+      throw new Error(`Unexpected grid search action: ${String(unexpected)}`);
+    }
+  }
+}
+
+/** Accessible name for one drawn cell, including why it is colored. */
+export function gridCellLabel(cell: GridCellView, kind: GridSearchKind = "bfs"): string {
+  const place = `row ${cell.row}, column ${cell.column}`;
+  const name = cellName(cell);
+  switch (cell.shade) {
+    case "wall":
+    case "open":
+      return `${name} at ${place}`;
+    case "frontier":
+      return kind === "dfs" ? `${name} at ${place}, on the stack` : `${name} at ${place}, in the frontier`;
+    case "visited":
+      return `${name} at ${place}, visited`;
+    case "backtrack":
+      return `${name} at ${place}, backtracked`;
+    case "current":
+      return `${name} at ${place}, current`;
+    case "path":
+      return kind === "dfs" ? `${name} at ${place}, on the path` : `${name} at ${place}, on the shortest path`;
+    default: {
+      const unexpected: never = cell.shade;
+      throw new Error(`Unexpected grid shade: ${String(unexpected)}`);
+    }
+  }
+}
+
+/** Accessible name for the whole grid at this step. */
+export function gridBoardLabel(
+  frame: Pick<GridFrame, "blocked" | "reached">,
+  kind: GridSearchKind = "bfs",
+): string {
+  const name = kind === "dfs" ? "Depth-first search grid" : "Breadth-first search grid";
+  if (frame.blocked) return `${name}, no path`;
+  if (frame.reached) return kind === "dfs" ? `${name}, path` : `${name}, shortest path`;
+  return name;
+}
+
+/** Legend entries for the grid, in swatch order. Depth-first search names the stack and a backtrack. */
+export function gridLegend(kind: GridSearchKind = "bfs"): readonly GridLegendItem[] {
+  const items: GridLegendItem[] = [
+    { shade: "wall", text: "wall" },
+    { shade: "frontier", text: kind === "dfs" ? "stack" : "frontier" },
+    { shade: "visited", text: "visited" },
+  ];
+  if (kind === "dfs") items.push({ shade: "backtrack", text: "backtracked" });
+  items.push({ shade: "current", text: "current" }, { shade: "path", text: "path" });
+  return items;
+}
+
+function drawGrid(step: GridDrawStep, kind: GridSearchKind): GridFrame {
   const columns = widthOf(step.grid);
   const rows = step.grid.length;
   const current = readCurrent(step, rows, columns);
@@ -42,17 +177,25 @@ export function gridFrame(step: GridBfsStep): GridFrame {
     throw new RangeError("A grid step names a path before the goal is found.");
   }
 
-  const frontier = pointSet(step.queue, rows, columns, "frontier");
+  const frontierName = kind === "dfs" ? "stack" : "frontier";
+  const frontier = pointSet(step.frontier, rows, columns, frontierName);
   const visited = pointSet(step.visited, rows, columns, "visited");
   const path = pointSet(step.path, rows, columns, "path");
-  assertDisjoint(frontier, visited);
+  assertDisjoint(frontier, visited, kind);
   if (current !== null) {
     const id = key(current.row, current.column);
-    if (step.action === "enqueue" && !frontier.has(id)) {
-      throw new RangeError("An enqueue step leaves its cell out of the frontier.");
+    if ((step.action === "enqueue" || step.action === "push") && !frontier.has(id)) {
+      throw new RangeError(leftOutMessage(step.action));
     }
-    if ((step.action === "visit" || step.action === "found") && !visited.has(id)) {
-      throw new RangeError("A dequeued cell is missing from the visited cells.");
+    if (
+      (step.action === "visit" || step.action === "backtrack" || step.action === "found") &&
+      !visited.has(id)
+    ) {
+      throw new RangeError(
+        kind === "dfs"
+          ? "A popped cell is missing from the visited cells."
+          : "A dequeued cell is missing from the visited cells.",
+      );
     }
     if (step.action === "found" && !path.has(id)) {
       throw new RangeError("A found step leaves the goal off the path.");
@@ -65,8 +208,8 @@ export function gridFrame(step: GridBfsStep): GridFrame {
     if (line === undefined) throw new RangeError("A grid frame is missing a row.");
     const placed: GridCellView[] = [];
     for (let column = 0; column < columns; column += 1) {
-      const kind = line[column];
-      if (kind !== "open" && kind !== "wall") {
+      const cellKind = line[column];
+      if (cellKind !== "open" && cellKind !== "wall") {
         throw new RangeError("A grid frame expects open or wall cells.");
       }
       const id = key(row, column);
@@ -74,13 +217,13 @@ export function gridFrame(step: GridBfsStep): GridFrame {
       const inFrontier = frontier.has(id);
       const inVisited = visited.has(id);
       const isCurrent = current !== null && current.row === row && current.column === column;
-      if (kind === "wall" && (onPath || inFrontier || inVisited || isCurrent)) {
+      if (cellKind === "wall" && (onPath || inFrontier || inVisited || isCurrent)) {
         throw new RangeError("A wall is part of the search.");
       }
       placed.push({
         row,
         column,
-        shade: shadeOf(kind, isCurrent, onPath, inFrontier, inVisited),
+        shade: shadeOf(cellKind, isCurrent, step.action === "backtrack" && isCurrent, onPath, inFrontier, inVisited),
         start: step.start.row === row && step.start.column === column,
         goal: step.goal.row === row && step.goal.column === column,
       });
@@ -97,47 +240,6 @@ export function gridFrame(step: GridBfsStep): GridFrame {
   };
 }
 
-/** Short caption under the grid for the current step. */
-export function gridResultLabel(step: Pick<GridBfsStep, "action" | "path">): string {
-  switch (step.action) {
-    case "enqueue":
-      return "enqueued";
-    case "visit":
-      return "visited";
-    case "found":
-      return pathCaption(step.path.length);
-    case "no-path":
-      return "no path";
-    default: {
-      const unexpected: never = step.action;
-      throw new Error(`Unexpected grid search action: ${String(unexpected)}`);
-    }
-  }
-}
-
-/** Accessible name for one drawn cell, including why it is colored. */
-export function gridCellLabel(cell: GridCellView): string {
-  const place = `row ${cell.row}, column ${cell.column}`;
-  const name = cellName(cell);
-  switch (cell.shade) {
-    case "wall":
-    case "open":
-      return `${name} at ${place}`;
-    case "frontier":
-      return `${name} at ${place}, in the frontier`;
-    case "visited":
-      return `${name} at ${place}, visited`;
-    case "current":
-      return `${name} at ${place}, current`;
-    case "path":
-      return `${name} at ${place}, on the shortest path`;
-    default: {
-      const unexpected: never = cell.shade;
-      throw new Error(`Unexpected grid shade: ${String(unexpected)}`);
-    }
-  }
-}
-
 function cellName(cell: GridCellView): string {
   if (cell.start && cell.goal) return "start and goal";
   if (cell.start) return "start";
@@ -146,20 +248,28 @@ function cellName(cell: GridCellView): string {
   return "open cell";
 }
 
-function pathCaption(length: number): string {
+function pathCaption(length: number, kind: GridSearchKind): string {
   const distance = length - 1;
-  if (distance === 1) return "shortest path, 1 step";
-  return `shortest path, ${distance} steps`;
+  const name = kind === "dfs" ? "path" : "shortest path";
+  if (distance === 1) return `${name}, 1 step`;
+  return `${name}, ${distance} steps`;
+}
+
+function leftOutMessage(action: "enqueue" | "push"): string {
+  if (action === "enqueue") return "An enqueue step leaves its cell out of the frontier.";
+  return "A push step leaves its cell out of the stack.";
 }
 
 function shadeOf(
   kind: GridCell,
   current: boolean,
+  backtrack: boolean,
   onPath: boolean,
   inFrontier: boolean,
   inVisited: boolean,
 ): GridShade {
   if (kind === "wall") return "wall";
+  if (backtrack) return "backtrack";
   if (current) return "current";
   if (onPath) return "path";
   if (inFrontier) return "frontier";
@@ -184,7 +294,7 @@ function widthOf(grid: readonly (readonly GridCell[])[]): number {
   return first.length;
 }
 
-function readCurrent(step: GridBfsStep, rows: number, columns: number): GridPoint | null {
+function readCurrent(step: GridDrawStep, rows: number, columns: number): GridPoint | null {
   if (step.action === "no-path") {
     if (step.cell !== null) throw new RangeError("A no-path step names a cell.");
     return null;
@@ -235,10 +345,18 @@ function pointSet(
   return seen;
 }
 
-function assertDisjoint(frontier: ReadonlySet<string>, visited: ReadonlySet<string>): void {
+function assertDisjoint(
+  frontier: ReadonlySet<string>,
+  visited: ReadonlySet<string>,
+  kind: GridSearchKind,
+): void {
   for (const id of frontier) {
     if (visited.has(id)) {
-      throw new RangeError("A cell is in the frontier and the visited cells.");
+      throw new RangeError(
+        kind === "dfs"
+          ? "A cell is on the stack and in the visited cells."
+          : "A cell is in the frontier and the visited cells.",
+      );
     }
   }
 }

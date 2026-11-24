@@ -1096,6 +1096,12 @@ h2 {
   color: #f4f1ea;
 }
 
+.grid-cell.is-backtrack {
+  background: var(--pivot);
+  border-color: var(--pivot);
+  color: light-dark(#f4f1ea, #1c1915);
+}
+
 .grid-result {
   margin: 4px 0 0;
   min-height: 1.5em;
@@ -1131,6 +1137,11 @@ h2 {
 .swatch.is-path {
   background: var(--found);
   border-color: var(--found);
+}
+
+.swatch.is-backtrack {
+  background: var(--pivot);
+  border-color: var(--pivot);
 }
 
 .message {

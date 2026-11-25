@@ -27,9 +27,9 @@ npm run build
 - Grid depth-first search step generator (`src/algorithms/grid-dfs.ts`) and a grid that plays it
 - A player that switches between binary search, insertion sort, merge sort, quicksort, stack, queue, linked list, binary search tree, binary min-heap, grid breadth-first search, and grid depth-first search, using shared playback controls (`src/playback.ts`): play, pause, speed, previous, and next. The left and right arrow keys step too.
 
-The binary search generator assumes a non-decreasing array of finite numbers. It records the opening window, every midpoint probe, and either the matching index or an empty window.
+The binary search generator assumes a non-decreasing array of finite numbers. It records the opening window, every midpoint probe, and either the matching index or an empty window. Each step includes the pseudocode line for that moment, and the page highlights it.
 
-The insertion sort generator takes any array of finite numbers and does not mutate it. It records the starting array, every comparison, every adjacent swap, and the sorted-prefix boundary, and it ends on the sorted array.
+The insertion sort generator takes any array of finite numbers and does not mutate it. It records the starting array, every comparison, every adjacent swap, and the sorted-prefix boundary, and it ends on the sorted array. Each step includes the pseudocode line for that moment, and the page highlights it.
 
 The merge sort generator takes any array of finite numbers and does not mutate it. It records the starting array, every split of a subarray, every comparison while two sorted halves are merged, and every write back into the array, and it ends on the sorted array.
 
@@ -60,5 +60,5 @@ This project is built with AI pair programming (Cursor agents) under Diogo's dir
 3. Linear structures: stack, queue, and linked list. **Done.** The generators are `src/algorithms/stack.ts`, `src/algorithms/queue.ts`, and `src/algorithms/linked-list.ts`, and the page plays them with the shared controls.
 4. Trees: binary search tree insert and search, then heap operations. **Done.** The generators are `src/algorithms/bst.ts` and `src/algorithms/heap.ts`, and the page plays both with the shared controls.
 5. Graphs: BFS and DFS on a small grid. **Done.** The generators are `src/algorithms/grid-bfs.ts` and `src/algorithms/grid-dfs.ts`, and the page plays both with the shared controls.
-6. A code panel that highlights the line for the current step. **Next.**
+6. A code panel that highlights the line for the current step. **In progress.** Binary search and insertion sort have the panel. Their generators (`src/algorithms/binary-search.ts`, `src/algorithms/insertion-sort.ts`) record a line index on each step, and `src/code-panel.ts` highlights that line. Merge sort, quicksort, stack, queue, linked list, binary search tree, binary min-heap, grid breadth-first search, and grid depth-first search are still next.
 7. Course checks that ask you to predict the next step

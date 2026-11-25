@@ -1,6 +1,33 @@
+import { codeLine, type CodeListing, type CodeStep } from "../code-panel.ts";
+
 export type BinarySearchComparison = "init" | "less" | "greater" | "equal" | "absent";
 
-export interface BinarySearchStep {
+/**
+ * Short binary search pseudocode.
+ * A step records the setup, the branch taken after a probe, or a miss.
+ * The loop header and the midpoint assignment sit between those lines.
+ */
+export const BINARY_SEARCH_CODE: CodeListing = {
+  lines: Object.freeze([
+    "low <- 0, high <- n - 1",
+    "while low <= high",
+    "    mid <- floor((low + high) / 2)",
+    "    if a[mid] = target then return mid",
+    "    if a[mid] < target then low <- mid + 1",
+    "    else high <- mid - 1",
+    "return not found",
+  ]),
+};
+
+const BINARY_SEARCH_LINE = {
+  init: 0,
+  equal: 3,
+  less: 4,
+  greater: 5,
+  absent: 6,
+} as const satisfies Record<BinarySearchComparison, number>;
+
+export interface BinarySearchStep extends CodeStep {
   readonly values: readonly number[];
   readonly target: number;
   readonly low: number;
@@ -8,6 +35,8 @@ export interface BinarySearchStep {
   readonly mid: number | null;
   readonly comparison: BinarySearchComparison;
   readonly foundIndex: number | null;
+  /** 0-based index into `BINARY_SEARCH_CODE.lines`. */
+  readonly line: number;
   readonly message: string;
 }
 
@@ -89,6 +118,7 @@ function step(
     mid,
     comparison,
     foundIndex,
+    line: codeLine(BINARY_SEARCH_CODE, BINARY_SEARCH_LINE[comparison]),
     message: describe(values, target, low, high, mid, comparison),
   };
 }

@@ -1144,6 +1144,52 @@ h2 {
   border-color: var(--pivot);
 }
 
+.code-panel {
+  margin: 18px 0 0;
+  padding: 12px 14px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+}
+
+.code-caption {
+  margin: 0 0 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.code-lines {
+  margin: 0;
+  padding: 0 0 0 2.4em;
+  overflow-x: auto;
+  list-style: decimal;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.code-lines li {
+  padding: 1px 8px;
+  border-radius: 0 6px 6px 0;
+  white-space: pre-wrap;
+}
+
+.code-lines li::marker {
+  color: var(--dim);
+}
+
+.code-lines li.is-current {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.code-lines code {
+  font: inherit;
+}
+
 .message {
   margin: 16px 0 0;
   min-height: 1.5em;

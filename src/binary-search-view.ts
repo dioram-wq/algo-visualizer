@@ -1,4 +1,9 @@
-import { binarySearchSteps, type BinarySearchStep } from "./algorithms/binary-search.ts";
+import {
+  BINARY_SEARCH_CODE,
+  binarySearchSteps,
+  type BinarySearchStep,
+} from "./algorithms/binary-search.ts";
+import { createCodePanel } from "./code-panel.ts";
 import { parseFiniteNumber, parseNumberList } from "./parse-numbers.ts";
 import { createPlayback } from "./playback.ts";
 
@@ -86,11 +91,13 @@ export function mountBinarySearch(stage: HTMLElement): () => void {
     legendItem("is-found", "match"),
   );
 
+  const code = createCodePanel(BINARY_SEARCH_CODE);
+
   const message = document.createElement("p");
   message.className = "message";
   message.setAttribute("aria-live", "polite");
 
-  stage.append(heading, intro, form, error, toolbar, cells, legend, message);
+  stage.append(heading, intro, form, error, toolbar, cells, legend, code.element, message);
 
   let steps: BinarySearchStep[] = [];
   const playback = createPlayback();
@@ -117,6 +124,7 @@ export function mountBinarySearch(stage: HTMLElement): () => void {
     if (!step || playback.length === 0) {
       progress.textContent = "No steps";
       cells.replaceChildren();
+      code.setLine(null);
       message.textContent = "";
       return;
     }
@@ -125,6 +133,7 @@ export function mountBinarySearch(stage: HTMLElement): () => void {
     error.textContent = "";
     progress.textContent = `Step ${playback.index + 1} of ${playback.length}`;
     message.textContent = step.message;
+    code.setLine(step.line);
     cells.replaceChildren(
       ...step.values.map((value, cellIndex) => renderCell(step, value, cellIndex)),
     );

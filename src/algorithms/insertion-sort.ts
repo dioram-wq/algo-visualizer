@@ -1,6 +1,32 @@
+import { codeLine, type CodeListing, type CodeStep } from "../code-panel.ts";
+
 export type InsertionSortAction = "start" | "compare" | "swap" | "done";
 
-export interface InsertionSortStep {
+/**
+ * Short insertion sort pseudocode.
+ * Start is the outer loop, a comparison is the inner test, a swap is the
+ * exchange, and done is the finished array. The lines that assign j sit
+ * inside those steps.
+ */
+export const INSERTION_SORT_CODE: CodeListing = {
+  lines: Object.freeze([
+    "for i <- 1 to n - 1",
+    "    j <- i",
+    "    while j > 0 and a[j - 1] > a[j]",
+    "        swap a[j - 1] and a[j]",
+    "        j <- j - 1",
+    "the array is sorted",
+  ]),
+};
+
+const INSERTION_SORT_LINE = {
+  start: 0,
+  compare: 2,
+  swap: 3,
+  done: 5,
+} as const satisfies Record<InsertionSortAction, number>;
+
+export interface InsertionSortStep extends CodeStep {
   readonly values: readonly number[];
   /**
    * Leading positions the sort has taken in.
@@ -21,6 +47,8 @@ export interface InsertionSortStep {
   /** On a compare step, whether the left value is greater than the right value. */
   readonly outOfOrder: boolean | null;
   readonly action: InsertionSortAction;
+  /** 0-based index into `INSERTION_SORT_CODE.lines`. */
+  readonly line: number;
   readonly message: string;
 }
 
@@ -98,6 +126,7 @@ function step(
     right,
     outOfOrder,
     action,
+    line: codeLine(INSERTION_SORT_CODE, INSERTION_SORT_LINE[action]),
     message: describe(values, sortedPrefix, keyIndex, left, right, outOfOrder, action),
   };
 }

@@ -1,9 +1,40 @@
+import { codeLine, type CodeListing, type CodeStep } from "../code-panel.ts";
+
 export type MergeSortAction = "start" | "split" | "compare" | "write" | "done";
 
 /** Which sorted run supplies the next value. Ties take the left run. */
 export type MergeSide = "left" | "right";
 
-export interface MergeSortStep {
+/**
+ * Short merge sort pseudocode.
+ * Start is the top-level call, a split is the midpoint, a comparison takes
+ * the next value from the two sorted halves, a write copies the merged run
+ * back, and done is the finished array. The recursive calls and the loop
+ * header sit inside those steps.
+ */
+export const MERGE_SORT_CODE: CodeListing = {
+  lines: Object.freeze([
+    "mergeSort(a, low, high)",
+    "    if low >= high then return",
+    "    mid <- floor((low + high) / 2)",
+    "    mergeSort(a, low, mid)",
+    "    mergeSort(a, mid + 1, high)",
+    "    while both halves remain",
+    "        take the smaller front",
+    "    write the merged run back into a",
+    "the array is sorted",
+  ]),
+};
+
+const MERGE_SORT_LINE = {
+  start: 0,
+  split: 2,
+  compare: 6,
+  write: 7,
+  done: 8,
+} as const satisfies Record<MergeSortAction, number>;
+
+export interface MergeSortStep extends CodeStep {
   readonly values: readonly number[];
   /**
    * Inclusive bounds of the subarray being split or merged.
@@ -25,6 +56,8 @@ export interface MergeSortStep {
   /** Destination of a write back into the array. Null except on a write step. */
   readonly writeIndex: number | null;
   readonly action: MergeSortAction;
+  /** 0-based index into `MERGE_SORT_CODE.lines`. */
+  readonly line: number;
   readonly message: string;
 }
 
@@ -145,6 +178,7 @@ function step(
     taken,
     writeIndex,
     action,
+    line: codeLine(MERGE_SORT_CODE, MERGE_SORT_LINE[action]),
     message: describe(values, low, high, mid, left, right, taken, writeIndex, action),
   };
 }

@@ -1,4 +1,5 @@
-import { quickSortSteps, type QuickSortStep } from "./algorithms/quicksort.ts";
+import { QUICKSORT_CODE, quickSortSteps, type QuickSortStep } from "./algorithms/quicksort.ts";
+import { createCodePanel } from "./code-panel.ts";
 import { parseNumberList } from "./parse-numbers.ts";
 import { createPlayback } from "./playback.ts";
 
@@ -82,11 +83,13 @@ export function mountQuickSort(stage: HTMLElement): () => void {
     legendItem("is-swap", "swapped"),
   );
 
+  const code = createCodePanel(QUICKSORT_CODE);
+
   const message = document.createElement("p");
   message.className = "message";
   message.setAttribute("aria-live", "polite");
 
-  stage.append(heading, intro, form, error, toolbar, bars, legend, message);
+  stage.append(heading, intro, form, error, toolbar, bars, legend, code.element, message);
 
   let steps: QuickSortStep[] = [];
   const playback = createPlayback();
@@ -113,6 +116,7 @@ export function mountQuickSort(stage: HTMLElement): () => void {
     if (!current || playback.length === 0) {
       progress.textContent = "No steps";
       bars.replaceChildren();
+      code.setLine(null);
       message.textContent = "";
       return;
     }
@@ -121,6 +125,7 @@ export function mountQuickSort(stage: HTMLElement): () => void {
     error.textContent = "";
     progress.textContent = `Step ${playback.index + 1} of ${playback.length}`;
     message.textContent = current.message;
+    code.setLine(current.line);
     const { min, max } = rangeOf(current.values);
     bars.replaceChildren(
       ...current.values.map((value, index) => renderBar(current, value, index, min, max)),

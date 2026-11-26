@@ -1,6 +1,45 @@
+import { codeLine, type CodeListing, type CodeStep } from "../code-panel.ts";
+
 export type QuickSortAction = "start" | "pivot" | "compare" | "swap" | "place" | "done";
 
-export interface QuickSortStep {
+/**
+ * Short Lomuto quicksort pseudocode.
+ * Start is the top-level call, a pivot is the last element of the range,
+ * a comparison is the scan test, a swap moves a smaller value into the
+ * next open slot, the following swap seats the pivot, place is the pivot's
+ * final index, and done is the finished array. The loop header and the
+ * recursive calls sit inside those steps.
+ */
+export const QUICKSORT_CODE: CodeListing = {
+  lines: Object.freeze([
+    "quickSort(a, low, high)",
+    "    if low >= high then return",
+    "    pivot <- a[high]",
+    "    store <- low",
+    "    for scan <- low to high - 1",
+    "        if a[scan] <= pivot",
+    "            swap a[store] and a[scan]",
+    "    swap a[store] and a[high]",
+    "    pivot is in its final position",
+    "    quickSort(a, low, store - 1)",
+    "    quickSort(a, store + 1, high)",
+    "the array is sorted",
+  ]),
+};
+
+const QUICKSORT_LINE = {
+  start: 0,
+  pivot: 2,
+  compare: 5,
+  swap: 6,
+  place: 8,
+  done: 11,
+} as const satisfies Record<QuickSortAction, number>;
+
+/** The exchange that moves the pivot to its final index. */
+const QUICKSORT_PIVOT_SWAP_LINE = 7;
+
+export interface QuickSortStep extends CodeStep {
   readonly values: readonly number[];
   /**
    * Inclusive bounds of the subarray being partitioned.
@@ -24,6 +63,8 @@ export interface QuickSortStep {
    */
   readonly lessOrEqual: boolean | null;
   readonly action: QuickSortAction;
+  /** 0-based index into `QUICKSORT_CODE.lines`. */
+  readonly line: number;
   readonly message: string;
 }
 
@@ -130,8 +171,20 @@ function step(
     right,
     lessOrEqual,
     action,
+    line: codeLine(QUICKSORT_CODE, lineFor(action, pivot, left)),
     message: describe(values, low, high, pivot, left, right, lessOrEqual, action),
   };
+}
+
+/**
+ * A scan swap leaves the pivot at the end of the range. The swap that seats
+ * it records the pivot at the left index of that exchange.
+ */
+function lineFor(action: QuickSortAction, pivot: number | null, left: number | null): number {
+  if (action === "swap" && pivot !== null && pivot === left) {
+    return QUICKSORT_PIVOT_SWAP_LINE;
+  }
+  return QUICKSORT_LINE[action];
 }
 
 function describe(

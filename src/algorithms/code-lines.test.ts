@@ -17,6 +17,20 @@ import {
   type QuickSortAction,
   type QuickSortStep,
 } from "./quicksort.ts";
+import {
+  QUEUE_CODE,
+  queueSteps,
+  type QueueAction,
+  type QueueOperation,
+  type QueueStep,
+} from "./queue.ts";
+import {
+  STACK_CODE,
+  stackSteps,
+  type StackAction,
+  type StackOperation,
+  type StackStep,
+} from "./stack.ts";
 
 const BINARY_SEARCH_TEXT: Record<BinarySearchComparison, string> = {
   init: "low <- 0, high <- n - 1",
@@ -52,12 +66,52 @@ const QUICKSORT_TEXT: Record<QuickSortAction, string> = {
 
 const QUICKSORT_PIVOT_SWAP = "    swap a[store] and a[high]";
 
+const STACK_TEXT: Record<Exclude<StackAction, "underflow">, string> = {
+  start: "start with the stack",
+  push: "    a[top] <- x",
+  pop: "    remove a[top]",
+  peek: "    return a[top]",
+};
+
+const STACK_POP_UNDERFLOW = "    if pop and the stack is empty then underflow";
+const STACK_PEEK_UNDERFLOW = "    if peek and the stack is empty then underflow";
+
+const QUEUE_TEXT: Record<Exclude<QueueAction, "underflow">, string> = {
+  start: "start with the queue",
+  enqueue: "    add x at the back",
+  dequeue: "    remove the front",
+  peek: "    return the front",
+};
+
+const QUEUE_DEQUEUE_UNDERFLOW = "    if dequeue and the queue is empty then underflow";
+const QUEUE_PEEK_UNDERFLOW = "    if peek and the queue is empty then underflow";
+
 /** A scan swap leaves the pivot at the end. Seating it records the pivot on the left. */
 function quickSortLineText(step: QuickSortStep): string {
   if (step.action === "swap" && step.pivot !== null && step.pivot === step.left) {
     return QUICKSORT_PIVOT_SWAP;
   }
   return QUICKSORT_TEXT[step.action];
+}
+
+/** An empty pop and an empty peek are different lines of the same action. */
+function stackLineText(step: StackStep): string {
+  if (step.action === "underflow") {
+    if (step.operation?.op === "pop") return STACK_POP_UNDERFLOW;
+    if (step.operation?.op === "peek") return STACK_PEEK_UNDERFLOW;
+    throw new Error("An underflow step is missing its operation.");
+  }
+  return STACK_TEXT[step.action];
+}
+
+/** An empty dequeue and an empty peek are different lines of the same action. */
+function queueLineText(step: QueueStep): string {
+  if (step.action === "underflow") {
+    if (step.operation?.op === "dequeue") return QUEUE_DEQUEUE_UNDERFLOW;
+    if (step.operation?.op === "peek") return QUEUE_PEEK_UNDERFLOW;
+    throw new Error("An underflow step is missing its operation.");
+  }
+  return QUEUE_TEXT[step.action];
 }
 
 function expectLine(listing: CodeListing, line: number, text: string) {
@@ -304,6 +358,218 @@ describe("quicksort step lines", () => {
     }
     expect(sawScanSwap).toBe(true);
     expect(sawPivotSwap).toBe(true);
+  });
+});
+
+describe("stack step lines", () => {
+  it("lists the pseudocode the panel shows", () => {
+    expect([...STACK_CODE.lines]).toEqual([
+      "start with the stack",
+      "push(x)",
+      "    a[top] <- x",
+      "pop()",
+      "    if pop and the stack is empty then underflow",
+      "    remove a[top]",
+      "peek()",
+      "    if peek and the stack is empty then underflow",
+      "    return a[top]",
+    ]);
+  });
+
+  it("points start, each push, a peek, and each pop at their lines", () => {
+    const steps = stackSteps([
+      { op: "push", value: 4 },
+      { op: "push", value: 9 },
+      { op: "peek" },
+      { op: "pop" },
+      { op: "push", value: 2 },
+      { op: "pop" },
+      { op: "pop" },
+    ]);
+    expect(steps.map((step) => step.action)).toEqual([
+      "start",
+      "push",
+      "push",
+      "peek",
+      "pop",
+      "push",
+      "pop",
+      "pop",
+    ]);
+    for (const step of steps) {
+      expectLine(STACK_CODE, step.line, stackLineText(step));
+    }
+  });
+
+  it("points an empty pop and an empty peek at different underflow lines", () => {
+    const steps = stackSteps([{ op: "pop" }, { op: "peek" }]);
+    expect(steps.map((step) => step.action)).toEqual(["start", "underflow", "underflow"]);
+    expect(steps[1]?.operation).toEqual({ op: "pop" });
+    expect(steps[2]?.operation).toEqual({ op: "peek" });
+    for (const step of steps) {
+      expectLine(STACK_CODE, step.line, stackLineText(step));
+    }
+    expect(steps[1]?.line).not.toBe(steps[2]?.line);
+  });
+
+  it("points an empty stack and a single starting value at the start line", () => {
+    for (const input of [[], [7]]) {
+      const steps = stackSteps([], input);
+      expect(steps).toHaveLength(1);
+      expect(steps[0]?.action).toBe("start");
+      expectLine(STACK_CODE, steps[0]?.line ?? -1, STACK_TEXT.start);
+    }
+  });
+
+  it("keeps every action inside the listing", () => {
+    const scripts: { initial: readonly number[]; operations: readonly StackOperation[] }[] = [
+      { initial: [], operations: [] },
+      { initial: [7], operations: [] },
+      { initial: [], operations: [{ op: "pop" }, { op: "peek" }] },
+      {
+        initial: [1, 4],
+        operations: [{ op: "pop" }, { op: "peek" }, { op: "pop" }, { op: "pop" }],
+      },
+      {
+        initial: [],
+        operations: [
+          { op: "push", value: 4 },
+          { op: "push", value: 9 },
+          { op: "peek" },
+          { op: "pop" },
+          { op: "push", value: 2 },
+          { op: "pop" },
+          { op: "pop" },
+          { op: "peek" },
+        ],
+      },
+    ];
+    let sawPop = false;
+    let sawPeek = false;
+    let sawPopUnderflow = false;
+    let sawPeekUnderflow = false;
+    for (const script of scripts) {
+      const steps = stackSteps(script.operations, script.initial);
+      expect(steps.length).toBeGreaterThan(0);
+      for (const step of steps) {
+        expectLine(STACK_CODE, step.line, stackLineText(step));
+        if (step.action === "pop") sawPop = true;
+        if (step.action === "peek") sawPeek = true;
+        if (step.action === "underflow" && step.operation?.op === "pop") sawPopUnderflow = true;
+        if (step.action === "underflow" && step.operation?.op === "peek") sawPeekUnderflow = true;
+      }
+    }
+    expect(sawPop).toBe(true);
+    expect(sawPeek).toBe(true);
+    expect(sawPopUnderflow).toBe(true);
+    expect(sawPeekUnderflow).toBe(true);
+  });
+});
+
+describe("queue step lines", () => {
+  it("lists the pseudocode the panel shows", () => {
+    expect([...QUEUE_CODE.lines]).toEqual([
+      "start with the queue",
+      "enqueue(x)",
+      "    add x at the back",
+      "dequeue()",
+      "    if dequeue and the queue is empty then underflow",
+      "    remove the front",
+      "peek()",
+      "    if peek and the queue is empty then underflow",
+      "    return the front",
+    ]);
+  });
+
+  it("points start, each enqueue, a peek, and each dequeue at their lines", () => {
+    const steps = queueSteps([
+      { op: "enqueue", value: 4 },
+      { op: "enqueue", value: 9 },
+      { op: "peek" },
+      { op: "dequeue" },
+      { op: "enqueue", value: 2 },
+      { op: "dequeue" },
+      { op: "dequeue" },
+    ]);
+    expect(steps.map((step) => step.action)).toEqual([
+      "start",
+      "enqueue",
+      "enqueue",
+      "peek",
+      "dequeue",
+      "enqueue",
+      "dequeue",
+      "dequeue",
+    ]);
+    for (const step of steps) {
+      expectLine(QUEUE_CODE, step.line, queueLineText(step));
+    }
+  });
+
+  it("points an empty dequeue and an empty peek at different underflow lines", () => {
+    const steps = queueSteps([{ op: "dequeue" }, { op: "peek" }]);
+    expect(steps.map((step) => step.action)).toEqual(["start", "underflow", "underflow"]);
+    expect(steps[1]?.operation).toEqual({ op: "dequeue" });
+    expect(steps[2]?.operation).toEqual({ op: "peek" });
+    for (const step of steps) {
+      expectLine(QUEUE_CODE, step.line, queueLineText(step));
+    }
+    expect(steps[1]?.line).not.toBe(steps[2]?.line);
+  });
+
+  it("points an empty queue and a single starting value at the start line", () => {
+    for (const input of [[], [7]]) {
+      const steps = queueSteps([], input);
+      expect(steps).toHaveLength(1);
+      expect(steps[0]?.action).toBe("start");
+      expectLine(QUEUE_CODE, steps[0]?.line ?? -1, QUEUE_TEXT.start);
+    }
+  });
+
+  it("keeps every action inside the listing", () => {
+    const scripts: { initial: readonly number[]; operations: readonly QueueOperation[] }[] = [
+      { initial: [], operations: [] },
+      { initial: [7], operations: [] },
+      { initial: [], operations: [{ op: "dequeue" }, { op: "peek" }] },
+      {
+        initial: [1, 4],
+        operations: [{ op: "dequeue" }, { op: "peek" }, { op: "dequeue" }, { op: "dequeue" }],
+      },
+      {
+        initial: [],
+        operations: [
+          { op: "enqueue", value: 4 },
+          { op: "enqueue", value: 9 },
+          { op: "peek" },
+          { op: "dequeue" },
+          { op: "enqueue", value: 2 },
+          { op: "dequeue" },
+          { op: "dequeue" },
+          { op: "peek" },
+        ],
+      },
+    ];
+    let sawDequeue = false;
+    let sawPeek = false;
+    let sawDequeueUnderflow = false;
+    let sawPeekUnderflow = false;
+    for (const script of scripts) {
+      const steps = queueSteps(script.operations, script.initial);
+      expect(steps.length).toBeGreaterThan(0);
+      for (const step of steps) {
+        expectLine(QUEUE_CODE, step.line, queueLineText(step));
+        if (step.action === "dequeue") sawDequeue = true;
+        if (step.action === "peek") sawPeek = true;
+        if (step.action === "underflow" && step.operation?.op === "dequeue") {
+          sawDequeueUnderflow = true;
+        }
+        if (step.action === "underflow" && step.operation?.op === "peek") sawPeekUnderflow = true;
+      }
+    }
+    expect(sawDequeue).toBe(true);
+    expect(sawPeek).toBe(true);
+    expect(sawDequeueUnderflow).toBe(true);
+    expect(sawPeekUnderflow).toBe(true);
   });
 });
 

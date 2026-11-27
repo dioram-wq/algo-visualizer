@@ -1,3 +1,5 @@
+import { codeLine, type CodeListing, type CodeStep } from "../code-panel.ts";
+
 export type StackOperation =
   | { readonly op: "push"; readonly value: number }
   | { readonly op: "pop" }
@@ -5,7 +7,40 @@ export type StackOperation =
 
 export type StackAction = "start" | "push" | "pop" | "peek" | "underflow";
 
-export interface StackStep {
+/**
+ * Short stack pseudocode for push, pop, and peek.
+ * Start is the given stack. A push writes the new top, a pop removes it,
+ * and a peek reads it. An empty pop and an empty peek are different
+ * underflow lines. The procedure headers sit between those lines.
+ */
+export const STACK_CODE: CodeListing = {
+  lines: Object.freeze([
+    "start with the stack",
+    "push(x)",
+    "    a[top] <- x",
+    "pop()",
+    "    if pop and the stack is empty then underflow",
+    "    remove a[top]",
+    "peek()",
+    "    if peek and the stack is empty then underflow",
+    "    return a[top]",
+  ]),
+};
+
+const STACK_LINE = {
+  start: 0,
+  push: 2,
+  pop: 5,
+  peek: 8,
+} as const satisfies Record<Exclude<StackAction, "underflow">, number>;
+
+/** The empty check inside pop. */
+const STACK_POP_UNDERFLOW_LINE = 4;
+
+/** The empty check inside peek. */
+const STACK_PEEK_UNDERFLOW_LINE = 7;
+
+export interface StackStep extends CodeStep {
   /** Contents after this step. Index 0 is the bottom and the last index is the top. */
   readonly values: readonly number[];
   readonly action: StackAction;
@@ -13,6 +48,8 @@ export interface StackStep {
   readonly operation: StackOperation | null;
   /** Value pushed, popped, or peeked. Null on the opening snapshot and on underflow. */
   readonly value: number | null;
+  /** 0-based index into `STACK_CODE.lines`. */
+  readonly line: number;
   readonly message: string;
 }
 
@@ -96,8 +133,19 @@ function step(
     action,
     operation,
     value,
+    line: codeLine(STACK_CODE, lineFor(action, operation)),
     message: describe(values, action, operation, value),
   };
+}
+
+/** An empty pop and an empty peek highlight different checks. */
+function lineFor(action: StackAction, operation: StackOperation | null): number {
+  if (action === "underflow") {
+    if (operation?.op === "pop") return STACK_POP_UNDERFLOW_LINE;
+    if (operation?.op === "peek") return STACK_PEEK_UNDERFLOW_LINE;
+    throw new RangeError("An underflow step is missing its operation.");
+  }
+  return STACK_LINE[action];
 }
 
 function describe(

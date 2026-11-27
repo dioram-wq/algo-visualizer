@@ -1,4 +1,10 @@
-import { queueSteps, type QueueOperation, type QueueStep } from "./algorithms/queue.ts";
+import {
+  QUEUE_CODE,
+  queueSteps,
+  type QueueOperation,
+  type QueueStep,
+} from "./algorithms/queue.ts";
+import { createCodePanel } from "./code-panel.ts";
 import { parseNumberList } from "./parse-numbers.ts";
 import { parseQueueOperations } from "./parse-queue-ops.ts";
 import { createPlayback } from "./playback.ts";
@@ -96,11 +102,13 @@ export function mountQueue(stage: HTMLElement): () => void {
   legend.className = "legend";
   legend.append(legendItem("is-front", "front"), legendItem("is-underflow", "underflow"));
 
+  const code = createCodePanel(QUEUE_CODE);
+
   const message = document.createElement("p");
   message.className = "message";
   message.setAttribute("aria-live", "polite");
 
-  stage.append(heading, intro, form, error, toolbar, scene, legend, message);
+  stage.append(heading, intro, form, error, toolbar, scene, legend, code.element, message);
 
   let steps: QueueStep[] = [];
   const playback = createPlayback();
@@ -131,6 +139,7 @@ export function mountQueue(stage: HTMLElement): () => void {
       queue.replaceChildren();
       result.textContent = "";
       result.classList.remove("is-underflow");
+      code.setLine(null);
       message.textContent = "";
       return;
     }
@@ -139,6 +148,7 @@ export function mountQueue(stage: HTMLElement): () => void {
     error.textContent = "";
     progress.textContent = `Step ${playback.index + 1} of ${playback.length}`;
     message.textContent = current.message;
+    code.setLine(current.line);
     const underflow = current.action === "underflow";
     const empty = current.values.length === 0;
     queue.classList.toggle("is-underflow", underflow);

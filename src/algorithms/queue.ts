@@ -1,3 +1,5 @@
+import { codeLine, type CodeListing, type CodeStep } from "../code-panel.ts";
+
 export type QueueOperation =
   | { readonly op: "enqueue"; readonly value: number }
   | { readonly op: "dequeue" }
@@ -5,7 +7,40 @@ export type QueueOperation =
 
 export type QueueAction = "start" | "enqueue" | "dequeue" | "peek" | "underflow";
 
-export interface QueueStep {
+/**
+ * Short queue pseudocode for enqueue, dequeue, and peek.
+ * Start is the given queue. Enqueue adds at the back, dequeue removes the
+ * front, and peek reads the front. An empty dequeue and an empty peek are
+ * different underflow lines. The procedure headers sit between those lines.
+ */
+export const QUEUE_CODE: CodeListing = {
+  lines: Object.freeze([
+    "start with the queue",
+    "enqueue(x)",
+    "    add x at the back",
+    "dequeue()",
+    "    if dequeue and the queue is empty then underflow",
+    "    remove the front",
+    "peek()",
+    "    if peek and the queue is empty then underflow",
+    "    return the front",
+  ]),
+};
+
+const QUEUE_LINE = {
+  start: 0,
+  enqueue: 2,
+  dequeue: 5,
+  peek: 8,
+} as const satisfies Record<Exclude<QueueAction, "underflow">, number>;
+
+/** The empty check inside dequeue. */
+const QUEUE_DEQUEUE_UNDERFLOW_LINE = 4;
+
+/** The empty check inside peek. */
+const QUEUE_PEEK_UNDERFLOW_LINE = 7;
+
+export interface QueueStep extends CodeStep {
   /** Contents after this step. Index 0 is the front and the last index is the back. */
   readonly values: readonly number[];
   readonly action: QueueAction;
@@ -13,6 +48,8 @@ export interface QueueStep {
   readonly operation: QueueOperation | null;
   /** Value enqueued, dequeued, or peeked. Null on the opening snapshot and on underflow. */
   readonly value: number | null;
+  /** 0-based index into `QUEUE_CODE.lines`. */
+  readonly line: number;
   readonly message: string;
 }
 
@@ -96,8 +133,19 @@ function step(
     action,
     operation,
     value,
+    line: codeLine(QUEUE_CODE, lineFor(action, operation)),
     message: describe(values, action, operation, value),
   };
+}
+
+/** An empty dequeue and an empty peek highlight different checks. */
+function lineFor(action: QueueAction, operation: QueueOperation | null): number {
+  if (action === "underflow") {
+    if (operation?.op === "dequeue") return QUEUE_DEQUEUE_UNDERFLOW_LINE;
+    if (operation?.op === "peek") return QUEUE_PEEK_UNDERFLOW_LINE;
+    throw new RangeError("An underflow step is missing its operation.");
+  }
+  return QUEUE_LINE[action];
 }
 
 function describe(
